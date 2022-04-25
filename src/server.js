@@ -1,49 +1,66 @@
-import { createServer } from 'http';
-import { getAll, getById, postMethod, putMethod, deleteMethod } from './controller/FlightController.js'
+import { createServer } from "http";
+import { MongoClient } from "mongodb";
+import {} from "dotenv/config";
 
-const server = createServer((req, res) => {
+import { getMethod, postMethod, putMethod, deleteMethod } from './controller/FlightController.js'
 
-    const requestString = req.url;
-    const requestArray = requestString.split("/");
+const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@${process.env.DB_URL}/FlightDatabase?retryWrites=true&w=majority`
 
-    const flightId = parseInt(requestArray[2]);
+console.log(uri);
 
-    const { headers } = req
-    //console.log(headers);
+MongoClient.connect(uri, (err, client) => {
+    if (err) return console.error(err);
+    console.log("Connected to database");
 
-    if (requestArray[1] === `flights`) {
+    const db = client.db("flights-database");
+    const flightsCollection = db.collection("flights");
 
-        if (req.method === "GET") {
+    const server = createServer((req, res) => {
 
-            if (!Number.isNaN(flightId)) {
-                getById(flightId, req, res);
+        const requestString = req.url;
+        const requestArray = requestString.split("/");
+    
+        const flightId = parseInt(requestArray[2]);
+            
+        //const { headers } = req
+        //console.log(headers);
+    
+        if (requestArray[1] === `flights`) {
+    
+            if (req.method === "GET") {
 
-            } else {
-                getAll(req, res);
+                if (!Number.isNaN(flightId)) {
+                    getMethod(req, res, { "id": requestArray[2] }, flightsCollection);
+    
+                } else {
+                    getMethod(req, res, {}, flightsCollection);
+                }
+            
+            } else if (req.method === "POST") {
+    
+                postMethod(req, res, flightsCollection);
+    
+            } else if (req.method === "PUT") {
+    
+                putMethod(req, res, flightsCollection);
+    
+            } else if (req.method === "DELETE") {
+    
+                if (!Number.isNaN(flightId)) {
+                    deleteMethod(req, res, {id: requestArray[2] }, flightsCollection);
+                }
             }
-        
-        } else if (req.method === "POST") {
-
-            postMethod(req, res);
-
-        } else if (req.method === "PUT") {
-
-            putMethod(req, res);
-
-        } else if (req.method === "DELETE") {
-
-            deleteMethod(req, res);
         }
-    }
-    else {
-        res.writeHead(400, {"Content-Type": "application/json"});
-        res.end(JSON.stringify({"mensagem":"erro"}));
-    }
+        else {
+            res.writeHead(400, {"Content-Type": "application/json"});
+            res.end(JSON.stringify({"mensagem":"erro"}));
+        }
+    });
 
-})
+    const { PORT } = process.env;
 
-const PORT = 5000;
+    server.listen(PORT, () => {
+        console.log(`Listening to port ${PORT}`);
+    });
+});
 
-server.listen(PORT, () => {
-    console.log(`Listening to port ${PORT}`);
-})

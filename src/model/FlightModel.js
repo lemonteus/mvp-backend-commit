@@ -121,7 +121,7 @@ export function deleteFlight(stringFlight) {
 
     const flights = flightsData;
     const jsonFlight = JSON.parse(stringFlight);
-    const reqId = jsonFlight.id-1;
+    const reqId = jsonFlight.id;
 
     return new Promise ((resolve, reject) => {
 
@@ -129,9 +129,11 @@ export function deleteFlight(stringFlight) {
         {
             const flight = flights.find((item) => item.id == reqId);
 
+            console.log(flight);
+
             if(typeof flight !== 'undefined')
             {             
-                if (reqId <= flight[flight.length-1].id)   {
+                if (reqId <= flights[flights.length-1].id)   {
                     flights.pop(flight);
 
                     //Source: https://nodejs.dev/learn/the-nodejs-fs-module
